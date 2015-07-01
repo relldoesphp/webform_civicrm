@@ -324,6 +324,27 @@ var wfCivi = (function ($, D) {
       $(this).attr('data-val', '');
     });
   }
+  
+  //Issue #2516936 add chainSelect function
+  function chainSelect() {
+    var $form = $(this).closest('form'),
+      $target = $('select[data-name="' + $(this).data('target') + '"]', $form),
+      data = $target.data(),
+      val = $(this).val();
+    $target.prop('disabled', true);
+    if ($target.is('select.crm-chain-select-control')) {
+      $('select[data-name="' + $target.data('target') + '"]', $form).prop('disabled', true).blur();
+    }
+    if (!(val && val.length)) {
+      CRM.utils.setOptions($target.blur(), [], data.emptyPrompt);
+    } else {
+      $target.addClass('loading');
+      $.getJSON(CRM.url(data.callback), {_value: val}, function(vals) {
+        $target.prop('disabled', false).removeClass('loading');
+        CRM.utils.setOptions($target, vals || [], (vals && vals.length ? data.selectPrompt : data.nonePrompt));
+      });
+    }
+  }
 
   D.behaviors.webform_civicrmForm = {
     attach: function (context) {
@@ -379,6 +400,15 @@ var wfCivi = (function ($, D) {
       $('div.civicrm-enabled[id*=contact-1-contact-image-url]:has(.file)', context).each(function() {
         pub.initFileField(getFieldNameFromClass($(this).parent()));
       });
+      
+      //Issue #2516936 Add handler to billing country field to trigger ajax refresh of corresponding state/prov
+      $("#billing-payment-block ").bind("DOMSubtreeModified", function(){
+        if ($(".crm-form-select[name*='billing_country_id'] ").length) {
+          $('select.crm-chain-select-control').off('.chainSelect').on('change.chainSelect', chainSelect);
+          $("#billing-payment-block ").unbind("DOMSubtreeModified");
+        }
+      });
+
     }
   };
   return pub;
