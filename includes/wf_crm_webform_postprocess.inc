@@ -1105,7 +1105,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       
       //Issue #2516924 If existing membership create renewal activity
       foreach ($result['values'] as $memId => $membership) {
-        if ($params['membership_type_id'] == $memId) {
+        if ($params['id']) {
           $actParams = array(
             'source_record_id' => $memId,
             'activity_type_id' => 'Membership Renewal',
